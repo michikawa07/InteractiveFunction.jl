@@ -1,0 +1,8 @@
+name = "InteractiveFunctions"
+uuid = "51b8994c-f083-47d9-8ec2-724f0b4e5709"
+authors = ["michikawa07 <michikawa.ryohei@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"

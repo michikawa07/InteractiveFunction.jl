@@ -1,36 +1,33 @@
 module InteractiveFunctions
-	using Revise:includet
+	using Lazy
+	using Revise
 	using REPL.TerminalMenus:RadioMenu,MultiSelectMenu,request,config
 
 	export includet_menu, cd_menu
 
-	function readdir_all!(filecontents, dir="")
-		isdir(dir) && dir[end]!='/' && (dir*='/')
-		list = readdir(dir=="" ? pwd() : dir)
-		for name in list
-			(isdir(dir*name) 
-				?	readdir_all!(filecontents, dir*name*'/') 
-				:	push!(filecontents, dir*name)	)
-	 	end 
+	function readdir_all(dir=".")
+		filecontents = String[]
+		for (root, dirs, files) in walkdir(dir), file in files
+			path = @> joinpath(root, file) replace("\\"=>"/") replace("./"=>"")
+			push!(filecontents,path) # path to files
+		end
 		filecontents
-	end
-	readdir_all(dir="",filecontents=String[]) = readdir_all!(filecontents,dir)
-	
+	end	
 
 	function includet_menu()
 		try	
-			list = readdir_all() |> l->l[occursin.(".jl",l)]
+			list = readdir_all() |> l->l[occursin.(r".jl$",l)]
 			config(ctrl_c_interrupt = false)
 			menu = MultiSelectMenu(list)
-			choice = request("\\n== choice revising file ==", menu)
-			#=if=# length(choice) ≤ 0 && throw(ErrorException(""))
+			choice = request("\n== choice revising file ==", menu)
+			#=if=# length(choice) ≤ 0 && throw("cancel")
 			println("==========================\n")
 			for file in list[choice|>collect]
 				println(" includet( \"$(file)\" )")
 				stats = @timed includet(pwd()*"/".*file)
-				println("  - success (time:$(stats.time))\n")
+				println("  - success (time:$(stats.time))")
 			end
-		catch e ;println("\n - cancel or failed\n $e\n")
+		catch e ;println("\n - $e\n")
 		end
 	end
 
@@ -39,13 +36,14 @@ module InteractiveFunctions
 			list = readdir() |> l->["..", l[isdir.(l)]...]
 			config(ctrl_c_interrupt = false)
 			menu = RadioMenu(list.*"/")
-			choice = request("\n== choice changing directory ==\n~~~~", menu)
-			#=if=# choice == -1 && throw(ErrorException(""))
-			print("~~~~\n - cd( \"$(list[choice])\" )")
+			choice = request("\n~~ choice changing directory ~~", menu)
+			#=if=# choice == -1 && throw("cancel")
+			println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+			println(" cd( \"$(list[choice])\" )")
 			cd(list[choice])
-			println("  - success\n")
-		catch e ;println("\n - cancel or failed\n $e\n")
+			println("  - success")
+		catch e ;println("\n - $e\n")
 		end
 	end
-
+#[(v.trackedfiles|>keys)  for v in Revise.watched_files |> values]
 end

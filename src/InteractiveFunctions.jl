@@ -48,15 +48,17 @@ module InteractiveFunctions
 			for file in list[choice|>collect]
 				file ∈ selectedlist && continue
 				showFunc && println("\n includet( \"$(file)\" )")
-				stats = @timed includet(pwd()*"/".*file)
+				stats = @timed a=includet(joinpath(pwd(), file))
 				println("  - success (time:$(stats.time))\n")
 			end
-		catch e ;println("\n - $e\n")
+			showVar || return
+			println("== Variables and Functions ==\n")
+			varinfo() |> display
+			println("\n")
+		catch e 
+			println("\n - $e\n")
+			return
 		end
-		
-		showVar || return
-		println("== Variables and Functions ==\n")
-		varinfo() |> display
 	end
 
 	function cdm()

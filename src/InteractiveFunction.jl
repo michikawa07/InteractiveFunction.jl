@@ -5,7 +5,7 @@ module InteractiveFunction
 
 	import Revise
 
-	export include_menu, cd_menu
+	export includet_menu, cd_menu
 
 	"""
 		dir 以下のファイルをすべて参照し， dirとの相対Pathを返す．

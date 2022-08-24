@@ -1,4 +1,9 @@
+/Manifest.toml
+/docs/build/
+
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
 deps/deps.jl
+
+*.code-workspace

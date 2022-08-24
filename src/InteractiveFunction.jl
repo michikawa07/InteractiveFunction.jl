@@ -1,4 +1,4 @@
-module InteractiveFunctions
+module InteractiveFunction
 	using Revise
 	using REPL.TerminalMenus
 	using InteractiveUtils
@@ -84,7 +84,7 @@ module InteractiveFunctions
 			list = readdirs() |> l->l[occursin.(r".jl$",l)]
 			config(ctrl_c_interrupt = false)
 			menu = MultiSelectMenu(list)
-			choice = request("\n== choice revising file ==", menu)
+			choice = request("\n== choice multi files ==", menu)
 			#=if=# length(choice) ≤ 0 && throw("cancel")
 			println("==========================\n")
 			for file in list[choice|>collect]

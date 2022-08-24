@@ -5,7 +5,7 @@ module InteractiveFunction
 
 	import Revise
 
-	export includemt, cdm
+	export include_menu, cd_menu
 
 	"""
 		dir 以下のファイルをすべて参照し， dirとの相対Pathを返す．
@@ -71,7 +71,7 @@ module InteractiveFunction
 		includet_menu(;karg...)
 	end
 
-	function cdm()
+	function cd_menu()
 		try	
 			list = readdir() |> l->["..", l[isdir.(l)]...]
 			TerminalMenus.config(ctrl_c_interrupt = false)

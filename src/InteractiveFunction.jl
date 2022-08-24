@@ -5,7 +5,9 @@ module InteractiveFunction
 
 	import Revise
 
-	export includet_menu, cd_menu
+	export includet_menu, cd_menu, tmp
+
+	const tmp = "this is tmp"
 
 	"""
 		dir 以下のファイルをすべて参照し， dirとの相対Pathを返す．
@@ -13,8 +15,6 @@ module InteractiveFunction
 	function readdirs(dir=pwd(); join=false)
 		filecontents = String[]
 		for (root, dirs, filenames) in walkdir(dir)
-			#///folder = relpath( root, dir )
-			#///paths = joinpath.(folder, filenames )
 			paths_full = joinpath.(root, filenames )
 			paths_rel = relpath.(paths_full , dir )
 			push!(filecontents,paths_rel...) # path to files
@@ -26,8 +26,6 @@ module InteractiveFunction
 		revisedfile = String[]
 		for (root,files) in Revise.watched_files
 			filenames = keys(files.trackedfiles)
-			#///folder = relpath( root, dir )
-			#///paths = joinpath.(folder, filenames)
 			paths_full = joinpath.(root, filenames )
 			paths_rel = relpath.(paths_full , dir )
 			push!(revisedfile,paths_rel...)
@@ -39,9 +37,9 @@ module InteractiveFunction
 		Current directory 以下にある `.jl` ファイルを `MultiSelectMenu` で列挙する．\n
 		選択された `.jl` ファイルを `Revise.includemt` でincludeする．
 	"""
-	function includet_menu(;showFunc=true,showVar=false)
+	function includet_menu(;showFunc=true,showVar=false)  #todo リファクタする．
 		try	
-			list = readdirs() |> l->l[occursin.(r".jl$",l)]
+			list = readdirs() |> l->l[endswith.(l, ".jl")]
 			selectedlist = getRevisedFileName() |> l->l[.!occursin.("..",l)]
 			selected = [i for (i,l) in enumerate(list) if l ∈ selectedlist]
 

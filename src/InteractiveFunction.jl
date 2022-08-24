@@ -3,10 +3,12 @@ module InteractiveFunction
 	using REPL.TerminalMenus
 	using InteractiveUtils
 
+	import Revise
+
 	export includemt, cdm
 
 	"""
-		dir 以下のファイルをすべて参照し，dirとの相対Pathを返す．
+		dir 以下のファイルをすべて参照し， dirとの相対Pathを返す．
 	"""
 	function readdirs(dir=pwd(); join=false)
 		filecontents = String[]
@@ -33,7 +35,11 @@ module InteractiveFunction
 		revisedfile
 	end
 
-	function includemt(;showFunc=true,showVar=false)
+	"""
+		Current directory 以下にある `.jl` ファイルを `MultiSelectMenu` で列挙する．\n
+		選択された `.jl` ファイルを `Revise.includemt` でincludeする．
+	"""
+	function includet_menu(;showFunc=true,showVar=false)
 		try	
 			list = readdirs() |> l->l[occursin.(r".jl$",l)]
 			selectedlist = getRevisedFileName() |> l->l[.!occursin.("..",l)]
@@ -59,6 +65,10 @@ module InteractiveFunction
 			println("\n - $e\n")
 			return
 		end
+	end
+
+	function Revise.includet(;karg...)
+		includet_menu(;karg...)
 	end
 
 	function cdm()

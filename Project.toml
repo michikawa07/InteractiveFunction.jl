@@ -1,7 +1,7 @@
 name = "InteractiveFunction"
 uuid = "915ec3d0-cb8e-432f-a2e7-8e1c0d600181"
 authors = ["michikawa07 <michikawa.ryohei@gmail.com> and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"

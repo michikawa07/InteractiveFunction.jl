@@ -30,10 +30,10 @@ function getrevisedfile(dir=pwd())
 end
 
 """
-	Current directory 以下にある `.jl` ファイルを `MultiSelectMenu` で列挙する．\n
-	選択された `.jl` ファイルを `Revise.includemt` でincludeする．
+Current directory 以下にある `.jl` ファイルを `MultiSelectMenu` で列挙する．\n
+選択された `.jl` ファイルを `Revise.includemt` でincludeする．
 """
-function includet_menu(; verbose=true, result=false)  #todo リファクタする．
+function includet_menu(; verbose=true, result=false)
 	header = "\n==== choice file to revise ===="
 	footer =   "==============================="
 	try	
@@ -42,16 +42,17 @@ function includet_menu(; verbose=true, result=false)  #todo リファクタす�
 		selected = [i for (i,l) in enumerate(list) if l ∈ list_selected]
 
 		menu = MultiSelectMenu( list; selected )
+		printfooter(footer, 3+min(length(list), menu.pagesize+menu.pageoffset))
 		choice = request(header, menu) |> collect
-		println(footer)
-		
+		#=last=# print("\n\n")
 		#=if=# length(choice) ≤ 0 && throw("cancel")
 		for file in list[choice]
 			file ∈ list_selected && continue
-			verbose && @info "\n includet( \"$(file)\" )"
+			verbose && @info "includet( \"$(file)\" )"
 			stats = @timed includet(joinpath(pwd(), file))
-			println(" - finish (time:$(stats.time))\n")
+			verbose && println(" - finish (time:$(stats.time))\n")
 		end
+
 		result || return
 		println("== Variables and Functions ==\n")
 		varinfo() |> display

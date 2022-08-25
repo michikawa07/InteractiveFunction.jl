@@ -1,28 +1,26 @@
 module InteractiveFunction
 	using Revise
 	using REPL.TerminalMenus
-	using InteractiveUtils
 
 	import Revise
 
 	export includet_menu, cd_menu, tmp
 
-	const tmp = "this is tmp"
-
 	"""
 		dir 以下のファイルをすべて参照し， dirとの相対Pathを返す．
 	"""
-	function readdirs(dir=pwd(); join=false)
+	function readdirs(dir=pwd(); join=false, sort=true)
 		filecontents = String[]
 		for (root, dirs, filenames) in walkdir(dir)
 			paths_full = joinpath.(root, filenames )
 			paths_rel = relpath.(paths_full , dir )
-			push!(filecontents,paths_rel...) # path to files
+			push!(filecontents, paths_rel...) # path to files
 		end
+		sort && sort!( filecontents )
 		filecontents
 	end	
 
-	function getRevisedFileName(dir=pwd())
+	function getrevisedfile(dir=pwd())
 		revisedfile = String[]
 		for (root,files) in Revise.watched_files
 			filenames = keys(files.trackedfiles)
@@ -37,32 +35,31 @@ module InteractiveFunction
 		Current directory 以下にある `.jl` ファイルを `MultiSelectMenu` で列挙する．\n
 		選択された `.jl` ファイルを `Revise.includemt` でincludeする．
 	"""
-	function includet_menu(;showFunc=true,showVar=false)  #todo リファクタする．
+	function includet_menu(; verbose=true, result=false)  #todo リファクタする．
 		try	
-			list = readdirs() |> l->l[endswith.(l, ".jl")]
-			selectedlist = getRevisedFileName() |> l->l[.!occursin.("..",l)]
-			selected = [i for (i,l) in enumerate(list) if l ∈ selectedlist]
+			list = filter( endswith(".jl"), readdirs() ) 
+			list_selected = filter( l->!occursin("..",l), getrevisedfile() )
+			selected = [i for (i,l) in enumerate(list) if l ∈ list_selected]
 
-			TerminalMenus.config(ctrl_c_interrupt = false)
-			menu = MultiSelectMenu(list;selected)
-			choice = request("\n== choice revising file ==", menu)
-			println("==========================")
+			TerminalMenus.config( ctrl_c_interrupt = true )
+			menu = MultiSelectMenu( list; selected )
+			choice = request("\n== choice file to revise ==", menu) |> collect
 			
+			println("===========================")
 			#=if=# length(choice) ≤ 0 && throw("cancel")
-			for file in list[choice|>collect]
-				file ∈ selectedlist && continue
-				showFunc && println("\n includet( \"$(file)\" )")
-				stats = @timed a=includet(joinpath(pwd(), file))
-				println("  - success (time:$(stats.time))\n")
+			for file in list[choice]
+				file ∈ list_selected && continue
+				verbose && println("\n includet( \"$(file)\" )")
+				stats = @timed includet(joinpath(pwd(), file))
+				println(" - finish (time:$(stats.time))\n")
 			end
-			showVar || return
+			result || return
 			println("== Variables and Functions ==\n")
 			varinfo() |> display
-			println("\n")
 		catch e 
-			println("\n - $e\n")
-			return
+			println("\n - $e")
 		end
+		println("\n")
 	end
 
 	function Revise.includet(;karg...)

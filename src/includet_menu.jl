@@ -7,26 +7,26 @@ export includet_menu
 
 """ dir 以下のファイルをすべて参照し， dirとの相対Pathを返す． """
 function readdirs(dir=pwd(); join=false, sort=true)
-	filecontents = String[]
+	file_contents = String[]
 	for (root, dirs, filenames) in walkdir(dir)
 		paths_full = joinpath.(root, filenames )
 		paths_rel = relpath.(paths_full , dir )
-		push!(filecontents, paths_rel...) # path to files
+		push!(file_contents, paths_rel...) # path to files
 	end
-	sort && sort!( filecontents )
-	filecontents
+	sort && sort!( file_contents )
+	file_contents
 end	
 
 """ Revise で includet されているファイルのリストを取得する """
 function getrevisedfile(dir=pwd())
-	revisedfile = String[]
+	file_revised = String[]
 	for (root,files) in Revise.watched_files
 		filenames = keys(files.trackedfiles)
 		paths_full = joinpath.(root, filenames )
 		paths_rel = relpath.(paths_full , dir )
-		push!(revisedfile,paths_rel...)
+		push!(file_revised,paths_rel...)
 	end
-	revisedfile
+	file_revised
 end
 
 """
@@ -42,10 +42,13 @@ function includet_menu(; verbose=true, result=false)
 		selected = [i for (i,l) in enumerate(list) if l ∈ list_selected]
 
 		menu = MultiSelectMenu( list; selected )
-		printfooter(footer, 3+min(length(list), menu.pagesize+menu.pageoffset))
+		size = menu.pagesize+menu.pageoffset
+
+		printfooter(footer, 3+min(length(list), size))
 		choice = request(header, menu) |> collect
-		#=last=# print("\n\n")
-		#=if=# length(choice) ≤ 0 && throw("cancel")
+		print("\n\n")
+
+		length(choice) ≤ 0 && throw("cancel")
 		for file in list[choice]
 			file ∈ list_selected && continue
 			verbose && @info "includet( \"$(file)\" )"
@@ -55,7 +58,7 @@ function includet_menu(; verbose=true, result=false)
 
 		result || return
 		println("== Variables and Functions ==\n")
-		varinfo() |> display
+		varqinfo() |> display
 	catch e 
 		println("\n - $e")
 	end

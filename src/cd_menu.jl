@@ -5,18 +5,23 @@ export cd_menu, CD
 function cd_menu(;karg=false)
 	header = "\n== choice changing directory =="
 	footer =   "==============================="
-
 	try
 		list = filter( isdir, readdir() )
 		pushfirst!(list, "..")
 		menu =  RadioMenu(list.*"/")
-		printfooter(footer, 2+min(length(list), menu.pagesize+menu.pageoffset))
+		size = menu.pagesize+menu.pageoffset
+
+		printfooter(footer, 2+min(length(list), size))
 		choice = request(header, menu)
-		#=if=# choice == -1 && throw(pwd())
-		cd( list[choice])
-		clean( 1+min(length(list), menu.pagesize+menu.pageoffset) )
+		
+		choice == -1 && throw( relpath( pwd(), homedir()) )
+		cd( list[choice] )
+
+		clean( 1+min(length(list), size) )
+		
 		cd_menu()
-	catch e ;println("\n - $e\n")
+	catch e 
+		println("\n - $e\n")
 	end
 end
 

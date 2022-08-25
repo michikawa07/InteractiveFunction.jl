@@ -3,8 +3,9 @@ module InteractiveFunction
 	using REPL.TerminalMenus
 
 	import Revise
+	import Base.Filesystem
 
-	export includet_menu, cd_menu, tmp
+	export includet_menu, cd_menu, CD
 
 	"""
 		dir 以下のファイルをすべて参照し， dirとの相対Pathを返す．
@@ -36,20 +37,21 @@ module InteractiveFunction
 		選択された `.jl` ファイルを `Revise.includemt` でincludeする．
 	"""
 	function includet_menu(; verbose=true, result=false)  #todo リファクタする．
+		header = "\n==== choice file to revise ===="
+		footer =   "==============================="
 		try	
 			list = filter( endswith(".jl"), readdirs() ) 
 			list_selected = filter( l->!occursin("..",l), getrevisedfile() )
 			selected = [i for (i,l) in enumerate(list) if l ∈ list_selected]
 
-			TerminalMenus.config( ctrl_c_interrupt = true )
 			menu = MultiSelectMenu( list; selected )
-			choice = request("\n== choice file to revise ==", menu) |> collect
+			choice = request(header, menu) |> collect
+			println(footer)
 			
-			println("===========================")
 			#=if=# length(choice) ≤ 0 && throw("cancel")
 			for file in list[choice]
 				file ∈ list_selected && continue
-				verbose && println("\n includet( \"$(file)\" )")
+				verbose && @info "\n includet( \"$(file)\" )"
 				stats = @timed includet(joinpath(pwd(), file))
 				println(" - finish (time:$(stats.time))\n")
 			end
@@ -62,25 +64,35 @@ module InteractiveFunction
 		println("\n")
 	end
 
-	function Revise.includet(;karg...)
-		includet_menu(;karg...)
-	end
+	Revise.includet(;karg...) = includet_menu(;karg...)
 
-	function cd_menu()
-		try	
-			list = readdir() |> l->["..", l[isdir.(l)]...]
-			TerminalMenus.config(ctrl_c_interrupt = false)
-			menu = RadioMenu(list.*"/")
-			choice = request("\n== choice changing directory ==", menu)
+	function clean(H)
+		buf = IOBuffer()
+		for i in 1:H+1
+			 print(buf, "\x1b[2K") # clear line
+			 print(buf, "\x1b[999D\x1b[$(1)A") # rollback
+		end
+		print(buf |> take! |> String)
+  	end
 
-			#=if=# choice == -1 && throw("cancel")
-			println("==============================\n")
-			println(" cd( \"$(list[choice])\" )")
-			cd(list[choice])
-			println("  - success")
+	TerminalMenus.config( scroll = :nowrap)
+
+	function cd_menu(;karg=false)
+		header="\n== choice changing directory =="
+		try
+			list = filter( isdir, readdir() )
+			pushfirst!(list, "..")
+			menu =  RadioMenu(list.*"/")
+			choice = request(header, menu)
+			#=if=# choice == -1 && throw(pwd())
+			cd( list[choice])
+			clean( 1+min(length(list), menu.pagesize+menu.pageoffset) )
+			cd_menu()
 		catch e ;println("\n - $e\n")
 		end
 	end
+
+	CD(;karg...) = cd_menu(karg...)
 
 	macro multiSelectMenud(f, title)
 		#f_d = Symbol(f,"_menued")

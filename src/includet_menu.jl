@@ -1,5 +1,6 @@
 using Revise
 using REPL.TerminalMenus
+using InteractiveUtils
 
 import Revise
 
@@ -7,7 +8,7 @@ export includet_menu
 
 """ dir 以下のファイルをすべて参照し， dirとの相対Pathを返す． """
 function readdirs(dir=pwd(); join=false, sort=true)
-	file_contents = String[]
+	file_contents = String[] #todo 再帰の深さかlistの長さで切らないとまずいかも．
 	for (root, dirs, filenames) in walkdir(dir)
 		paths_full = joinpath.(root, filenames )
 		paths_rel = relpath.(paths_full , dir )
@@ -44,11 +45,17 @@ function includet_menu(; verbose=true, result=false)
 		menu = MultiSelectMenu( list; selected )
 		size = menu.pagesize+menu.pageoffset
 
-		printfooter(footer, 3+min(length(list), size))
+		H = 3+min(length(list), size)
+		buf = IOBuffer()
+		print(buf, "\n"^(H))
+		print(buf, footer)
+		print(buf, "\x1b[999D\x1b[$(H)A") # rollback
+		print(buf |> take! |> String)
+
 		choice = request(header, menu) |> collect
+		length(choice) ≤ 0 && return print("\n")
 		print("\n\n")
 
-		length(choice) ≤ 0 && throw("cancel")
 		for file in list[choice]
 			file ∈ list_selected && continue
 			verbose && @info "includet( \"$(file)\" )"
@@ -56,13 +63,13 @@ function includet_menu(; verbose=true, result=false)
 			verbose && println(" - finish (time:$(stats.time))\n")
 		end
 
-		result || return
+		result || return print("\n")
 		println("== Variables and Functions ==\n")
-		varqinfo() |> display
+		varinfo() |> display
 	catch e 
-		println("\n - $e")
+		e == InterruptException() && return print("\n")
+		e
 	end
-	println("\n")
 end
 
 Revise.includet(;karg...) = includet_menu(;karg...)

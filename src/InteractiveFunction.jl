@@ -1,6 +1,5 @@
 module InteractiveFunction
 
-	include("utils.jl")
 	include("includet_menu.jl")
 	include("cd_menu.jl")
 

@@ -4,8 +4,10 @@ authors = ["michikawa07 <michikawa.ryohei@gmail.com> and contributors"]
 version = "0.2.1"
 
 [deps]
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+Term = "22787eb5-b846-44ae-b979-8e399b8463ab"
 
 [compat]
 julia = "1"

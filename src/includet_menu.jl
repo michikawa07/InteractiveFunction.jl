@@ -7,25 +7,43 @@ import Revise
 export includet_menu
 
 """ dir 以下のファイルをすべて参照し， dirとの相対Pathを返す． """
-function readdirs(dir=pwd(); join=false, sort=true)
+function readdirs(dir=pwd(); join=false, sort=true, by=_->true)
 	file_contents = String[] #todo 再帰の深さかlistの長さで切らないとまずいかも．
-	for (root, dirs, filenames) in walkdir(dir)
-		paths_full = joinpath.(root, filenames )
-		paths_rel = relpath.(paths_full , dir )
-		push!(file_contents, paths_rel...) # path to files
+	for (root, dirs, filenames) in walkdir(dir, topdown=true)
+		startswith(relpath(root, dir), ".") && continue
+		filter!( by, filenames )
+		isempty( filenames ) && continue
+		paths_full = joinpath.( root, filenames )
+		paths_rel  = relpath.( paths_full , dir )
+		push!(file_contents, paths_rel...)
 	end
 	sort && sort!( file_contents )
 	file_contents
-end	
+end
+
+""" dir 以下のファイルをすべて参照し， dirとの相対Pathを返す． """
+function readfiles(pdir=pwd(), max=4; join=false, sort=true, by=isfile, _depth=1)
+	paths = readdir(pdir; join=true)
+	file_contents = filter!(by, filter(isfile, paths))
+	_depth < max && for dir in filter(isdir, paths)
+		dirname = relpath(dir, pdir)
+		startswith(dirname, ".") && continue
+		jifiles = readfiles(dir, max; join, sort, by, _depth=_depth+1)
+		push!(file_contents, jifiles...)
+	end
+	sort && sort!( file_contents )
+	relpath.(file_contents)
+end
 
 """ Revise で includet されているファイルのリストを取得する """
-function getrevisedfile(dir=pwd())
+function getrevisedfiles(dir=pwd(); by=_->true)
 	file_revised = String[]
 	for (root,files) in Revise.watched_files
 		filenames = keys(files.trackedfiles)
 		paths_full = joinpath.(root, filenames )
 		paths_rel = relpath.(paths_full , dir )
-		push!(file_revised,paths_rel...)
+		filter!(by, paths_rel)
+		push!(file_revised, paths_rel...)
 	end
 	file_revised
 end
@@ -34,16 +52,20 @@ end
 Current directory 以下にある `.jl` ファイルを `MultiSelectMenu` で列挙する．\n
 選択された `.jl` ファイルを `Revise.includemt` でincludeする．
 """
-function includet_menu(; verbose=true, result=false)
-	header = "\n==== choice file to revise ===="
-	footer =   "==============================="
+function includet_menu(;dir=pwd(), dep=4, verbose=true, result=false)
+	header = "\n==== choice files to revise ===="
+	footer =   "================================"
 	try	
-		list = filter( endswith(".jl"), readdirs() ) 
-		list_selected = filter( l->!occursin("..",l), getrevisedfile() )
+		isdir(dir) || return @warn "`$dir` directory cannot be found"
+
+		list = readfiles(dir, dep; by=endswith(".jl"))
+		isempty(list) && return @warn "Cannot find `.jl` files (search depth is $dep)"
+		
+		list_selected = getrevisedfiles(;by=l->!occursin("..",l))
 		selected = [i for (i,l) in enumerate(list) if l ∈ list_selected]
 
 		menu = MultiSelectMenu( list; selected )
-		size = menu.pagesize+menu.pageoffset
+		size = menu.pagesize + menu.pageoffset
 
 		H = 3+min(length(list), size)
 		buf = IOBuffer()
@@ -53,21 +75,23 @@ function includet_menu(; verbose=true, result=false)
 		print(buf |> take! |> String)
 
 		choice = request(header, menu) |> collect
-		length(choice) ≤ 0 && return print("\n")
+		isempty(choice) && return print("\n\n")
 		print("\n\n")
 
 		for file in list[choice]
 			file ∈ list_selected && continue
 			verbose && @info "includet( \"$(file)\" )"
-			stats = @timed includet(joinpath(pwd(), file))
-			verbose && println(" - finish (time:$(stats.time))\n")
+			stats = @timed includet( file )
+			verbose && file ∈ getrevisedfiles() ? 
+				println(" - finish (time:$(stats.time))\n") :
+				@error "`includet( \"$(file)\" )` failed\n"
 		end
 
-		result || return print("\n")
+		result || return print("\n\n")
 		println("== Variables and Functions ==\n")
 		varinfo() |> display
 	catch e 
-		e == InterruptException() && return print("\n")
+		e == InterruptException() && return print("-\n\n")
 		e
 	end
 end

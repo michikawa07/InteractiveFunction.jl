@@ -30,14 +30,14 @@ function cd_menu(;karg=false)
 		@info " ~\\$(relpath( pwd(), homedir())) \x1b[999D\x1b[$(1)A"
 		
 		choice = request(header, menu)
-		choice == -1 && return print("\n")
+		choice == -1 && return print("\n\n")
 
 		cd( list[choice] )
 
 		clean( H-1 )
 		cd_menu()
 	catch e 
-		e == InterruptException() && return print("\n")
+		e == InterruptException() && return print("\n\n")
 		e
 	end
 end

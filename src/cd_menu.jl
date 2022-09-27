@@ -1,6 +1,6 @@
 using REPL.TerminalMenus
 
-export cd_menu, CD
+export cd_menu, @cd, CD
 
 function clean(H)
 	buf = IOBuffer()
@@ -30,16 +30,19 @@ function cd_menu(;karg=false)
 		@info " ~\\$(relpath( pwd(), homedir())) \x1b[999D\x1b[$(1)A"
 		
 		choice = request(header, menu)
-		choice == -1 && return print("\n\n")
+		choice == -1 && return println()
 
 		cd( list[choice] )
 
 		clean( H-1 )
 		cd_menu()
 	catch e 
-		e == InterruptException() && return print("\n\n")
-		e
+		e == InterruptException() && return println("\n\n - cancel")
+		#= other =# throw(e)
 	end
 end
 
-CD(;karg...) = cd_menu(karg...)
+const CD = cd_menu
+macro cd(karg...)
+	:(cd_menu($karg...))
+end

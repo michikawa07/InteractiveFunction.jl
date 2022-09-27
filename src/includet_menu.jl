@@ -4,7 +4,7 @@ using InteractiveUtils
 
 import Revise
 
-export includet_menu
+export includet_menu, @includet
 
 """ dir 以下のファイルをすべて参照し， dirとの相対Pathを返す． """
 function readdirs(dir=pwd(); join=false, sort=true, by=_->true)
@@ -55,9 +55,10 @@ Current directory 以下にある `.jl` ファイルを `MultiSelectMenu` で列
 function includet_menu(;dir=pwd(), dep=4, verbose=true, result=false)
 	header = "\n==== choice files to revise ===="
 	footer =   "================================"
-	try	
-		isdir(dir) || return @warn "`$dir` directory cannot be found"
 
+	isdir(dir) || return @warn "`$dir` directory cannot be found"
+
+	try	
 		list = readfiles(dir, dep; by=endswith(".jl"))
 		isempty(list) && return @warn "Cannot find `.jl` files (search depth is $dep)"
 		
@@ -75,25 +76,33 @@ function includet_menu(;dir=pwd(), dep=4, verbose=true, result=false)
 		print(buf |> take! |> String)
 
 		choice = request(header, menu) |> collect
-		isempty(choice) && return print("\n\n")
 		print("\n\n")
+		isempty(choice) && return
 
 		for file in list[choice]
 			file ∈ list_selected && continue
-			verbose && @info "includet( \"$(file)\" )"
-			stats = @timed includet( file )
-			verbose && file ∈ getrevisedfiles() ? 
-				println(" - finish (time:$(stats.time))\n") :
-				@error "`includet( \"$(file)\" )` failed\n"
+			stats = @timed begin 
+				verbose && @info "includet( \"$(file)\" )"
+				includet( joinpath(dir, file) ) #mainの処理
+			end
+			verbose && begin 
+				file ∈ getrevisedfiles() ? #includetが成功したかを判定
+					println(" - finish (time:$(stats.time))\n") :
+					@error "`includet( \"$(file)\" )` failed\n\n"
+			end
 		end
 
-		result || return print("\n\n")
-		println("== Variables and Functions ==\n")
-		varinfo() |> display
+		result && begin
+			println("== Variables and Functions ==\n")
+			varinfo() |> display			
+		end
 	catch e 
-		e == InterruptException() && return print("-\n\n")
-		e
+		e isa InterruptException && return println("\n\n - cancel")
+		#= other =# throw(e)
 	end
 end
 
 Revise.includet(;karg...) = includet_menu(;karg...)
+macro includet()
+	:($includet_menu())
+end

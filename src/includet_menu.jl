@@ -94,10 +94,10 @@ function includet_menu(;dir=pwd(), dep=4,
 			file ∈ list_selected && continue
 			prog = ProgressUnknown(0.01, "includet( $file )"; spinner=true, color=:blue)
 			show_verbose && @async while !prog.done
-				ProgressMeter.next!(prog)
-				sleep(0.05)
+				ProgressMeter.next!(prog) #todo using Pkg　だと async がうまくいかないっぽい
+				sleep(0.2)
 			end
-			sleep(0.1) #ProgressMeter.next!の表示がされるまでちょっと待つ
+			sleep(0.25) #ProgressMeter.next!の表示がされるまでちょっと待つ
 			try 
 				show_error || @suppress includet( joinpath(dir, file) )
 				show_error &&           includet( joinpath(dir, file) )
@@ -108,9 +108,9 @@ function includet_menu(;dir=pwd(), dep=4,
 					ProgressMeter.finish!(prog) 
 				else
 					prog.done = true
+					println()
 					show_result || continue
 					sleep(0.06)
-					println()
 					@error "`includet( \"$(file)\" )` failed" _file=nothing
 				end
 			end

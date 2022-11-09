@@ -1,17 +1,17 @@
 name = "InteractiveFunction"
 uuid = "915ec3d0-cb8e-432f-a2e7-8e1c0d600181"
 authors = ["michikawa07 <michikawa.ryohei@gmail.com> and contributors"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
-Term = "22787eb5-b846-44ae-b979-8e399b8463ab"
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 
 [compat]
 Revise = "3"
-Term = "1"
 julia = "1"
 
 [extras]

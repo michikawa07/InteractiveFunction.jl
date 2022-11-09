@@ -1,6 +1,8 @@
 using Revise
 using REPL.TerminalMenus
 using InteractiveUtils
+using ProgressMeter
+using Suppressor
 
 import Revise
 
@@ -52,7 +54,12 @@ end
 Current directory 以下にある `.jl` ファイルを `MultiSelectMenu` で列挙する．\n
 選択された `.jl` ファイルを `Revise.includemt` でincludeする．
 """
-function includet_menu(;dir=pwd(), dep=4, verbose=true, result=false)
+function includet_menu(;dir=pwd(), dep=4, 
+	show_verbose=true, 
+	show_result=show_verbose, 
+	show_error=false, 
+	show_varinfo=false
+	)
 	header = "\n==== choice files to revise ===="
 	footer =   "================================"
 
@@ -70,39 +77,56 @@ function includet_menu(;dir=pwd(), dep=4, verbose=true, result=false)
 
 		H = 3+min(length(list), size)
 		buf = IOBuffer()
-		print(buf, "\n"^(H))
-		print(buf, footer)
+		print(buf, "\n"^(H) * footer)		 # footer
 		print(buf, "\x1b[999D\x1b[$(H)A") # rollback
-		print(buf |> take! |> String)
+		print(buf |> take! |> String)		 # 表示
 
 		choice = request(header, menu) |> collect
+		setdiff!( sort!(choice), selected )
 		print("\n\n")
-		isempty(choice) && return
+		length(choice)==0 && return
+		length(choice)==1 && begin 
+			show_error = true
+			show_result = false	
+		end
 
 		for file in list[choice]
 			file ∈ list_selected && continue
-			stats = @timed begin 
-				verbose && @info "includet( \"$(file)\" )"
-				includet( joinpath(dir, file) ) #mainの処理
+			prog = ProgressUnknown(0.01, "includet( $file )"; spinner=true, color=:blue)
+			show_verbose && @async while !prog.done
+				ProgressMeter.next!(prog)
+				sleep(0.05)
 			end
-			verbose && begin 
-				file ∈ getrevisedfiles() ? #includetが成功したかを判定
-					println(" - finish (time:$(stats.time))\n") :
-					@error "`includet( \"$(file)\" )` failed\n\n"
+			sleep(0.1) #ProgressMeter.next!の表示がされるまでちょっと待つ
+			try 
+				show_error || @suppress includet( joinpath(dir, file) )
+				show_error &&           includet( joinpath(dir, file) )
+			catch e
+				throw(e)
+			finally
+				if file ∈ getrevisedfiles() #includetが成功したかを判定
+					ProgressMeter.finish!(prog) 
+				else
+					prog.done = true
+					show_result || continue
+					sleep(0.06)
+					println()
+					@error "`includet( \"$(file)\" )` failed" _file=nothing
+				end
 			end
 		end
-
-		result && begin
-			println("== Variables and Functions ==\n")
-			varinfo() |> display			
-		end
+	
 	catch e 
 		e isa InterruptException && return println("\n\n - cancel")
 		#= other =# throw(e)
+	finally
+		show_varinfo && println("\n=== Variables and Functions ===\n$(varinfo())")
 	end
+
+	nothing
 end
 
 Revise.includet(;karg...) = includet_menu(;karg...)
 macro includet()
-	:($includet_menu())
+	:($includet_menu(show_verbose=true))
 end

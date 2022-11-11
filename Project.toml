@@ -11,6 +11,7 @@ Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 
 [compat]
+ProgressMeter = "1"
 Revise = "3"
 julia = "1"
 

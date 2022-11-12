@@ -94,19 +94,17 @@ function includet_menu(;dir=pwd(), dep=4,
 		for file in list[choice]
 			file ∈ list_selected && continue
 			prog = ProgressUnknown(0.01, "includet( $file )"; spinner=true, color=:blue)
-			show_verbose && ProgressMeter.next!(prog); sleep(0.05) #ProgressMeter.next!の表示がされるまでちょっと待つ
-			show_error || ( task = @spawn @suppress includet( joinpath(dir, file) ))
-			show_error && ( task = @spawn           includet( joinpath(dir, file) ))
+			show_error || begin task = @async @suppress (sleep(0.1); includet( joinpath(dir, file) )) end
+			show_error && begin task = @async           (sleep(0.1); includet( joinpath(dir, file) )) end
 			while !istaskdone(task)
 				show_verbose && ProgressMeter.next!(prog)
-				sleep(0.2)
+				sleep(0.1)
 			end
 			if file ∈ getrevisedfiles() #includetが成功したかを判定
-				ProgressMeter.finish!(prog) 
+				ProgressMeter.finish!(prog)
 			else
-				println()
 				show_result || continue
-				sleep(0.06)
+				println()
 				@error "`includet( \"$(file)\" )` failed" _file=nothing
 			end
 		end
@@ -123,5 +121,5 @@ end
 
 Revise.includet(;karg...) = includet_menu(;karg...)
 macro includet()
-	:($includet_menu(show_verbose=true))
+	:($includet_menu( ))
 end

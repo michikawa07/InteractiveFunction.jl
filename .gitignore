@@ -9,3 +9,5 @@ deps/deps.jl
 
 *.code-workspace
 regLocalRegistry.jl
+
+sample*.jl
